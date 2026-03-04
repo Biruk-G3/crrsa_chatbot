@@ -1,0 +1,1 @@
+web: gunicorn telegram_office_bot.wsgi
