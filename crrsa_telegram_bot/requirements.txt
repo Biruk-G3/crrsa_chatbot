@@ -7,4 +7,4 @@ sqlparse==0.5.5
 tzdata==2025.3
 dj-database-url
 requests
-openai
+openai>=1.0.0

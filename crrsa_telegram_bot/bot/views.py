@@ -25,7 +25,7 @@ def webhook(request):
                 chat_id = message["chat"]["id"]
                 text = message.get("text", "")
 
-                # Ask AI
+                # Call AI
                 reply = ask_ai(text)
 
                 # Send reply to Telegram
@@ -36,7 +36,6 @@ def webhook(request):
             return JsonResponse({"status": "ok"})
 
         except Exception as e:
-            # Log the error in Render
             print("Error in webhook:", str(e))
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
