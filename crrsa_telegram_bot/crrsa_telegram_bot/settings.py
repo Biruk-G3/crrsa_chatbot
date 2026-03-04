@@ -33,6 +33,10 @@ ALLOWED_HOSTS = ["crrsa-chatbot-3.onrender.com",
                 ]
 PORT = os.environ.get('PORT')
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://crrsa-chatbot-3.onrender.com",
+]
+
 # Application definition
 
 INSTALLED_APPS = [

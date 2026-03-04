@@ -6,6 +6,8 @@ import requests
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponse
 from .ai import ask_ai
+from django.views.decorators.csrf import csrf_exempt
+
 
 def home(request):
     return HttpResponse("Telegram bot is running")
