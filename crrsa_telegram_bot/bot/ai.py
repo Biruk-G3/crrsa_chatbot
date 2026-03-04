@@ -22,7 +22,7 @@ def ask_ai(question):
     try:
         response = requests.post(url, json=payload)
         data = response.json()
-
+        print("Full API response:", data)
         if "predictions" in data:
             # Google Vertex AI returns text in this field
             return data["predictions"][0]["content"]
