@@ -9,9 +9,11 @@ from .ai import ask_ai
 from django.views.decorators.csrf import csrf_exempt
 
 
+
 def home(request):
     return HttpResponse("Telegram bot is running")
 
+@csrf_exempt
 def webhook(request):
     print("Webhook hit")
 

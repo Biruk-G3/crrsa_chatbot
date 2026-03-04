@@ -27,15 +27,13 @@ SECRET_KEY = 'django-insecure-dbd1f3bz48uot28-x$++bni0#dl6@239fwz3y%40^8vj)-qw6n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["crrsa-chatbot-3.onrender.com",
-                    "localhost",
-                    "127.0.0.1"
-                ]
+ALLOWED_HOSTS = ["crrsa-chatbot-3.onrender.com"]
+
+CSRF_TRUSTED_ORIGINS = ["https://crrsa-chatbot-3.onrender.com"]
+
 PORT = os.environ.get('PORT')
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://crrsa-chatbot-3.onrender.com",
-]
+
 
 # Application definition
 
