@@ -1,1 +1,1 @@
-web: gunicorn telegram_office_bot.wsgi
+web: gunicorn crrsa_telegram_bot.wsgi
