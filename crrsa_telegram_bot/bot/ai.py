@@ -2,43 +2,61 @@ import os
 import requests
 
 # -------------------------------
-# Set your Gemini API key in environment variables
+# Gemini API key
 # -------------------------------
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # -------------------------------
-# Define your office services
+# Office services with requirements
 # -------------------------------
 SERVICES = {
-    "resident_registration": (
-        "We register residents in our woreda and provide them an ID card. "
-        "This ID is required to access other services in our office."
-    ),
-    "birth_certificate": (
-        "We issue birth certificates to residents who do not have one. "
-        "Requirements: must be a resident of this woreda, must have an ID card, and complete the necessary forms."
-    ),
-    "marriage_certificate": (
-        "We provide marriage certificates. "
-        "Requirements: at least one of the couple (bride or groom) must be a resident of the woreda."
-    ),
-    "divorce_certificate": (
-        "We provide divorce certificates following legal procedures. "
-        "At least one party must be a resident of this woreda."
-    ),
-    "death_certificate": (
-        "We provide death certificates for residents who have passed away in this woreda. "
-        "At least one family member must be a resident and provide necessary documents."
-    )
+    "resident_registration": {
+        "description": "We register residents in our woreda and provide them an ID card. This ID is required to access other services in our office.",
+        "requirements": ["Must live in the woreda"]
+    },
+    "birth_certificate": {
+        "description": "We issue birth certificates to residents who do not have one.",
+        "requirements": [
+            "Must be a resident of this woreda",
+            "Must have a woreda ID card",
+            "Complete necessary forms"
+        ]
+    },
+    "marriage_certificate": {
+        "description": "We provide marriage certificates.",
+        "requirements": [
+            "At least one of the couple (bride or groom) must be a resident of the woreda",
+            "Must have a woreda ID card",
+            "Complete marriage forms"
+        ]
+    },
+    "divorce_certificate": {
+        "description": "We provide divorce certificates following legal procedures.",
+        "requirements": [
+            "At least one party must be a resident of this woreda",
+            "Complete divorce forms"
+        ]
+    },
+    "death_certificate": {
+        "description": "We provide death certificates for residents who have passed away in this woreda.",
+        "requirements": [
+            "At least one family member must be a resident",
+            "Provide necessary documents"
+        ]
+    }
 }
 
 # -------------------------------
-# Build prompt for AI
+# Build prompt for AI (if needed)
 # -------------------------------
 def build_prompt(question):
-    service_descriptions = "\n".join(f"{k}: {v}" for k, v in SERVICES.items())
+    service_descriptions = "\n".join(
+        f"{k}: {v['description']} Requirements: {', '.join(v['requirements'])}" 
+        for k, v in SERVICES.items()
+    )
     prompt = f"""
 You are an assistant for our civil registration office. Only answer questions related to the services we provide.
+Always include exact requirements and conditions for each service when answering.
 Do not answer anything unrelated. Here are our services:
 
 {service_descriptions}
@@ -50,15 +68,24 @@ Answer concisely and accurately based on our services.
     return prompt
 
 # -------------------------------
-# Main AI request function
+# Main AI function
 # -------------------------------
 def ask_ai(question):
+    question_lower = question.lower()
+
+    # First, match service keywords and return requirements directly
+    for key, info in SERVICES.items():
+        if key.replace("_", " ") in question_lower or any(word in question_lower for word in key.split("_")):
+            reqs = "\n".join(f"- {r}" for r in info["requirements"])
+            return f"{info['description']}\nRequirements:\n{reqs}"
+
+    # Fallback to AI if Gemini API key is set
     if not GEMINI_API_KEY:
         return "Gemini API key is missing"
 
     prompt = build_prompt(question)
 
-    # Step 1: Get available models
+    # Step 1: Get models
     try:
         list_url = f"https://generativelanguage.googleapis.com/v1/models?key={GEMINI_API_KEY}"
         list_resp = requests.get(list_url)
@@ -68,7 +95,7 @@ def ask_ai(question):
         print("Error fetching models:", e)
         return "AI service is currently unavailable"
 
-    # Step 2: Pick the first model that supports generateContent
+    # Step 2: Pick first compatible model
     model_name = None
     for m in models:
         if "supportedGenerationMethods" in m and "generateContent" in m["supportedGenerationMethods"]:
@@ -79,7 +106,7 @@ def ask_ai(question):
         print("No compatible models found:", list_data)
         return "AI service is currently unavailable"
 
-    # Step 3: Call the AI model
+    # Step 3: Call AI model
     url = f"https://generativelanguage.googleapis.com/v1/{model_name}:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     data = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -88,8 +115,6 @@ def ask_ai(question):
         response = requests.post(url, headers=headers, json=data)
         result = response.json()
         print("Full API response:", result)
-
-        # Return AI-generated answer
         return result["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
         print("Error generating content:", e)
@@ -99,6 +124,6 @@ def ask_ai(question):
 # Example usage
 # -------------------------------
 if __name__ == "__main__":
-    question = "How can I get a birth certificate?"
+    question = "How can I get a marriage certificate?"
     answer = ask_ai(question)
     print("AI answer:", answer)
