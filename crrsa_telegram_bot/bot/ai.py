@@ -1,13 +1,36 @@
-import google.generativeai as genai
+import requests
 import os
 
-genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-
-model = genai.GenerativeModel("gemini-1.5-flash")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 def ask_ai(question):
+    url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent"
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": question}
+                ]
+            }
+        ]
+    }
+
+    response = requests.post(
+        url + "?key=" + GEMINI_API_KEY,
+        headers=headers,
+        json=data
+    )
+
+    result = response.json()
+
+    print("Full API response:", result)
+
     try:
-        response = model.generate_content(question)
-        return response.text
-    except Exception as e:
-        return f"AI Error: {str(e)}"
+        return result["candidates"][0]["content"]["parts"][0]["text"]
+    except:
+        return "AI did not return a response"
