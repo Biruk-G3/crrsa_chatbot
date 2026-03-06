@@ -73,19 +73,37 @@ Answer concisely and accurately based on our services.
 def ask_ai(question):
     question_lower = question.lower()
 
-    # First, match service keywords and return requirements directly
-    for key, info in SERVICES.items():
-        if key.replace("_", " ") in question_lower or any(word in question_lower for word in key.split("_")):
-            reqs = "\n".join(f"- {r}" for r in info["requirements"])
-            return f"{info['description']}\nRequirements:\n{reqs}"
+    # keyword mapping for better detection
+    KEYWORDS = {
+        "resident_registration": ["resident", "registration", "id card", "woreda id"],
+        "birth_certificate": ["birth", "birth certificate", "born"],
+        "marriage_certificate": ["marriage", "marry", "wedding"],
+        "divorce_certificate": ["divorce", "separate", "separation"],
+        "death_certificate": ["death", "dead", "funeral"]
+    }
 
-    # Fallback to AI if Gemini API key is set
+    # detect service using keywords
+    for service, words in KEYWORDS.items():
+        for word in words:
+            if word in question_lower:
+                info = SERVICES[service]
+                reqs = "\n".join(f"- {r}" for r in info["requirements"])
+                return f"{info['description']}\nRequirements:\n{reqs}"
+
+    # handle general questions without AI
+    if "service" in question_lower or "what do you do" in question_lower:
+        service_list = "\n".join(
+            f"- {name.replace('_',' ').title()}" for name in SERVICES.keys()
+        )
+        return f"Our office provides these services:\n{service_list}"
+
+    # if Gemini key missing
     if not GEMINI_API_KEY:
-        return "Gemini API key is missing"
+        return "Please ask about resident registration, birth certificate, marriage certificate, divorce certificate, or death certificate."
 
     prompt = build_prompt(question)
 
-    # Step 1: Get models
+    # Step 1: get models
     try:
         list_url = f"https://generativelanguage.googleapis.com/v1/models?key={GEMINI_API_KEY}"
         list_resp = requests.get(list_url)
@@ -93,9 +111,9 @@ def ask_ai(question):
         models = list_data.get("models", [])
     except Exception as e:
         print("Error fetching models:", e)
-        return "AI service is currently unavailable"
+        return "AI service unavailable"
 
-    # Step 2: Pick first compatible model
+    # Step 2: pick compatible model
     model_name = None
     for m in models:
         if "supportedGenerationMethods" in m and "generateContent" in m["supportedGenerationMethods"]:
@@ -104,9 +122,9 @@ def ask_ai(question):
 
     if not model_name:
         print("No compatible models found:", list_data)
-        return "AI service is currently unavailable"
+        return "AI service unavailable"
 
-    # Step 3: Call AI model
+    # Step 3: call AI
     url = f"https://generativelanguage.googleapis.com/v1/{model_name}:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     data = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -114,16 +132,12 @@ def ask_ai(question):
     try:
         response = requests.post(url, headers=headers, json=data)
         result = response.json()
-        print("Full API response:", result)
-        return result["candidates"][0]["content"]["parts"][0]["text"]
+
+        if "candidates" in result:
+            return result["candidates"][0]["content"]["parts"][0]["text"]
+
+        return "I can help with birth, marriage, divorce, death certificates, and resident registration."
+
     except Exception as e:
         print("Error generating content:", e)
         return "AI did not return a response"
-
-# -------------------------------
-# Example usage
-# -------------------------------
-if __name__ == "__main__":
-    question = "How can I get a marriage certificate?"
-    answer = ask_ai(question)
-    print("AI answer:", answer)
