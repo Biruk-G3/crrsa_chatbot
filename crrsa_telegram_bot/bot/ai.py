@@ -47,13 +47,41 @@ SERVICES = {
 }
 
 # -------------------------------
-# Build prompt for AI (if needed)
+# Service name translations
+# -------------------------------
+SERVICE_TRANSLATIONS = {
+    "resident_registration": {
+        "am": "የነዋሪ ምዝገባ",
+        "or": "Galmee jiraataa"
+    },
+    "birth_certificate": {
+        "am": "የልደት ሰርተፍኬት",
+        "or": "Ragaa dhalootaa"
+    },
+    "marriage_certificate": {
+        "am": "የጋብቻ ሰርተፍኬት",
+        "or": "Ragaa gaa'elaa"
+    },
+    "divorce_certificate": {
+        "am": "የፍቺ ሰርተፍኬት",
+        "or": "Ragaa hiikkaa gaa'elaa"
+    },
+    "death_certificate": {
+        "am": "የሞት ሰርተፍኬት",
+        "or": "Ragaa du'aa"
+    }
+}
+
+# -------------------------------
+# Build prompt for AI
 # -------------------------------
 def build_prompt(question):
+
     service_descriptions = "\n".join(
-        f"{k}: {v['description']} Requirements: {', '.join(v['requirements'])}" 
+        f"{k}: {v['description']} Requirements: {', '.join(v['requirements'])}"
         for k, v in SERVICES.items()
     )
+
     prompt = f"""
 You are an assistant for our civil registration office. Only answer questions related to the services we provide.
 Always include exact requirements and conditions for each service when answering.
@@ -70,10 +98,10 @@ Answer concisely and accurately based on our services.
 # -------------------------------
 # Main AI function
 # -------------------------------
-def ask_ai(question):
+def ask_ai(question, lang="en"):
+
     question_lower = question.lower()
 
-    # keyword mapping for better detection
     KEYWORDS = {
         "resident_registration": ["resident", "registration", "id card", "woreda id"],
         "birth_certificate": ["birth", "birth certificate", "born"],
@@ -86,15 +114,31 @@ def ask_ai(question):
     for service, words in KEYWORDS.items():
         for word in words:
             if word in question_lower:
+
                 info = SERVICES[service]
                 reqs = "\n".join(f"- {r}" for r in info["requirements"])
+
+                if lang == "am":
+                    return f"{SERVICE_TRANSLATIONS[service]['am']}\nመስፈርቶች:\n{reqs}"
+
+                if lang == "or":
+                    return f"{SERVICE_TRANSLATIONS[service]['or']}\nUlaagaalee:\n{reqs}"
+
                 return f"{info['description']}\nRequirements:\n{reqs}"
 
     # handle general questions without AI
     if "service" in question_lower or "what do you do" in question_lower:
+
         service_list = "\n".join(
             f"- {name.replace('_',' ').title()}" for name in SERVICES.keys()
         )
+
+        if lang == "am":
+            return "እኛ የምንሰጣቸው አገልግሎቶች:\n" + service_list
+
+        if lang == "or":
+            return "Tajaajiloota nuti kenninu:\n" + service_list
+
         return f"Our office provides these services:\n{service_list}"
 
     # if Gemini key missing
