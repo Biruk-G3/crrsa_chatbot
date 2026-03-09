@@ -9,5 +9,3 @@ dj-database-url
 requests
 openai>=1.0.0
 google-generativeai
-transformers==4.35.0
-sentencepiece
